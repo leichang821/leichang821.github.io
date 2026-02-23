@@ -141,10 +141,16 @@ function renderAbout(data) {
     </div>`;
 }
 
+function renderInlineMd(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>');
+}
+
 function renderProjects(projects) {
   const section = document.getElementById('projects');
   const cards = projects.map(p => {
-    const bullets = p.bullets.map(b => `<li>${b}</li>`).join('');
+    const bullets = p.bullets.map(b => `<li>${renderInlineMd(b)}</li>`).join('');
     return `
       <div class="project-card">
         <div class="project-card-left">
