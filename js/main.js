@@ -55,29 +55,56 @@ function parseProjectsMd(text) {
 // Parse BibTeX from publications.bib
 function parseBib(text) {
   const entries = [];
+  const seen = new Set();
   const entryRegex = /@(\w+)\s*\{([^,]+),\s*([\s\S]*?)\n\}/g;
   let match;
   while ((match = entryRegex.exec(text)) !== null) {
     const type = match[1].toLowerCase();
+    if (type === 'comment' || type === 'string' || type === 'preamble') continue;
     const citekey = match[2].trim();
+    if (seen.has(citekey)) continue; // skip duplicates
+    seen.add(citekey);
     const fields = {};
     const fieldRegex = /(\w+)\s*=\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g;
     let fm;
     while ((fm = fieldRegex.exec(match[3])) !== null) {
-      fields[fm[1].toLowerCase()] = fm[2].replace(/\{|\}/g, '').trim();
+      // Strip braces and clean LaTeX escape sequences like {\'a} -> a
+      const val = fm[2]
+        .replace(/\{\\['`^"~=.]\s*(\w)\}/g, '$1')  // {\'a} -> a
+        .replace(/\{(\w)\}/g, '$1')                  // {N} -> N
+        .replace(/\{|\}/g, '')                        // remaining braces
+        .replace(/\\/g, '')                           // stray backslashes
+        .trim();
+      fields[fm[1].toLowerCase()] = val;
     }
     entries.push({ type, citekey, ...fields });
   }
   return entries;
 }
 
-// Format a single BibTeX author string "Last, First and Last, First"
+// Detect if "Chang, Lei" is the first author in a BibTeX author string
+function isChangFirstAuthor(authorStr) {
+  if (!authorStr) return false;
+  const first = authorStr.split(' and ')[0].toLowerCase().trim();
+  return first.startsWith('chang,') || first.startsWith('chang ');
+}
+
+// Detect if "Chang" (Lei Chang) appears anywhere in author string
+function isChangAuthor(authorStr) {
+  if (!authorStr) return false;
+  return /chang,?\s+l(ei)?[\s,;]/i.test(authorStr + ' ') || /\bchang, lei\b/i.test(authorStr);
+}
+
+// Format a single BibTeX author string "Last, First and Last, First" -> "First Last, ..."
 function formatAuthors(authorStr) {
   if (!authorStr) return '';
-  return authorStr.split(' and ').map(a => {
-    const parts = a.split(',').map(s => s.trim());
-    if (parts.length === 2) return `${parts[1]} ${parts[0]}`;
-    return a.trim();
+  const parts = authorStr.split(' and ');
+  return parts.map((a, i) => {
+    a = a.trim();
+    if (a === 'others') return 'et al.';
+    const nameParts = a.split(',').map(s => s.trim());
+    if (nameParts.length === 2) return `${nameParts[1]} ${nameParts[0]}`;
+    return a;
   }).join(', ');
 }
 
@@ -138,17 +165,23 @@ function renderProjects(projects) {
 function renderPublications(entries) {
   const section = document.getElementById('publications');
 
-  const firstAuthor = entries.filter(e => e.keywords === 'first-author');
-  const coAuthor = entries.filter(e => e.keywords === 'co-author');
+  // Only show entries where Lei Chang is an author; sort newest first
+  const changEntries = entries
+    .filter(e => isChangAuthor(e.author || ''))
+    .sort((a, b) => (parseInt(b.year) || 0) - (parseInt(a.year) || 0));
+
+  // Split: first/co-first author vs co-author
+  const firstAuthor = changEntries.filter(e => isChangFirstAuthor(e.author || ''));
+  const coAuthor    = changEntries.filter(e => !isChangFirstAuthor(e.author || ''));
 
   function renderGroup(title, items) {
     if (!items.length) return '';
     const lis = items.map(e => {
       const authors = highlightSelf(formatAuthors(e.author || ''));
       const journal = e.journal ? `<span class="journal">${e.journal}</span>` : '';
+      const volIssuePages = [e.volume, e.number ? `(${e.number})` : '', e.pages].filter(Boolean).join('');
       const year = e.year ? `, ${e.year}` : '';
-      const note = e.note ? ` <em>(${e.note})</em>` : '';
-      return `<li><span>${authors}. "${e.title}"${journal ? '. ' + journal : ''}${year}.${note}</span></li>`;
+      return `<li><span>${authors}. ${e.title}${journal ? '. ' + journal : ''}${volIssuePages ? ', ' + volIssuePages : ''}${year}.</span></li>`;
     }).join('');
     return `<div class="pub-group"><div class="section-heading"><h2>${title}</h2></div><ol class="pub-list">${lis}</ol></div>`;
   }
