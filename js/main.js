@@ -172,35 +172,35 @@ function renderProjects(projects) {
     </div>`;
 }
 
+// Return the 0-based position of Lei Chang in the author list
+function changAuthorPosition(authorStr) {
+  if (!authorStr) return 999;
+  return authorStr.split(' and ').findIndex(a => /chang,?\s+l(ei)?[\s,;]?$/i.test(a.trim() + ' '));
+}
+
 function renderPublications(entries) {
   const section = document.getElementById('publications');
 
-  // Only show entries where Lei Chang is an author; sort newest first
-  const changEntries = entries
+  const sorted = entries
     .filter(e => isChangAuthor(e.author || ''))
-    .sort((a, b) => (parseInt(b.year) || 0) - (parseInt(a.year) || 0));
+    .sort((a, b) => {
+      const yearDiff = (parseInt(b.year) || 0) - (parseInt(a.year) || 0);
+      if (yearDiff !== 0) return yearDiff;
+      return changAuthorPosition(a.author) - changAuthorPosition(b.author);
+    });
 
-  // Split: first/co-first author vs co-author
-  const firstAuthor = changEntries.filter(e => isChangFirstAuthor(e.author || ''));
-  const coAuthor    = changEntries.filter(e => !isChangFirstAuthor(e.author || ''));
-
-  function renderGroup(title, items) {
-    if (!items.length) return '';
-    const lis = items.map(e => {
-      const authors = highlightSelf(formatAuthors(e.author || ''));
-      const journal = e.journal ? `<span class="journal">${e.journal}</span>` : '';
-      const volIssuePages = [e.volume, e.number ? `(${e.number})` : '', e.pages].filter(Boolean).join('');
-      const year = e.year ? `, ${e.year}` : '';
-      return `<li><span>${authors}. ${e.title}${journal ? '. ' + journal : ''}${volIssuePages ? ', ' + volIssuePages : ''}${year}.</span></li>`;
-    }).join('');
-    return `<div class="pub-group"><h2>${title}</h2><ol class="pub-list">${lis}</ol></div>`;
-  }
+  const lis = sorted.map(e => {
+    const authors = highlightSelf(formatAuthors(e.author || ''));
+    const journal = e.journal ? `<span class="journal">${e.journal}</span>` : '';
+    const volIssuePages = [e.volume, e.number ? `(${e.number})` : '', e.pages].filter(Boolean).join('');
+    const year = e.year ? `, ${e.year}` : '';
+    return `<li><span>${authors}. ${e.title}${journal ? '. ' + journal : ''}${volIssuePages ? ', ' + volIssuePages : ''}${year}.</span></li>`;
+  }).join('');
 
   section.innerHTML = `
     <div class="container">
       <h2>Publications</h2>
-      ${renderGroup('First &amp; Co-First Author', firstAuthor)}
-      ${renderGroup('Co-Author (Selected)', coAuthor)}
+      <ol class="pub-list">${lis}</ol>
     </div>`;
 }
 
