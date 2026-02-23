@@ -118,27 +118,33 @@ function highlightSelf(html) {
 function renderAbout(data) {
   const { meta, body } = data;
   const section = document.getElementById('about');
+
+  // Use photo if assets/photo.jpg exists, else SVG placeholder
+  const photoHtml = `
+    <div class="about-photo-placeholder">
+      <!-- PHOTO: drop assets/photo.jpg (400x400px) and replace this div with:
+           <img src="assets/photo.jpg" class="about-photo" alt="Lei Chang"> -->
+      <svg width="72" height="72" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="40" cy="30" r="18" fill="#C9BDB5"/>
+        <ellipse cx="40" cy="72" rx="28" ry="18" fill="#C9BDB5"/>
+      </svg>
+    </div>`;
+
   section.innerHTML = `
     <div class="container">
       <div class="about-wrapper">
-        <div class="about-photo-placeholder">
-          <!-- PHOTO: Replace assets/photo.jpg with your photo (400x400px) -->
-          <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="40" cy="30" r="18" fill="#c8b8b8"/>
-            <ellipse cx="40" cy="72" rx="28" ry="18" fill="#c8b8b8"/>
-          </svg>
-        </div>
         <div class="about-info">
           <h1>${meta.name || 'Lei Chang'}</h1>
           <p class="subtitle">${meta.title || ''}</p>
           <p class="affiliation">${meta.affiliation || ''}</p>
           <div class="about-links">
-            ${meta.email ? `<a href="mailto:${meta.email}">✉ ${meta.email}</a>` : ''}
+            ${meta.email ? `<a href="mailto:${meta.email}">${meta.email}</a>` : ''}
             ${meta.google_scholar && meta.google_scholar !== '[URL placeholder]'
               ? `<a href="${meta.google_scholar}" target="_blank" rel="noopener">Google Scholar</a>` : ''}
           </div>
           <p class="research-focus">${body}</p>
         </div>
+        ${photoHtml}
       </div>
     </div>`;
 }
@@ -149,15 +155,19 @@ function renderProjects(projects) {
     const bullets = p.bullets.map(b => `<li>${b}</li>`).join('');
     return `
       <div class="project-card">
-        <h3>${p.title}</h3>
-        <div class="meta">${p.role ? `${p.role}` : ''}${p.period ? ` &nbsp;·&nbsp; ${p.period}` : ''}</div>
-        ${bullets ? `<ul>${bullets}</ul>` : ''}
+        <div class="project-card-left">
+          <h3>${p.title}</h3>
+          <div class="meta">${p.period || ''}${p.role ? '<br>' + p.role : ''}</div>
+        </div>
+        <div class="project-card-right">
+          ${bullets ? `<ul>${bullets}</ul>` : ''}
+        </div>
       </div>`;
   }).join('');
 
   section.innerHTML = `
     <div class="container">
-      <div class="section-heading"><h2>Research Experience</h2></div>
+      <h2>Research Experience</h2>
       <div class="projects-grid">${cards}</div>
     </div>`;
 }
@@ -183,13 +193,14 @@ function renderPublications(entries) {
       const year = e.year ? `, ${e.year}` : '';
       return `<li><span>${authors}. ${e.title}${journal ? '. ' + journal : ''}${volIssuePages ? ', ' + volIssuePages : ''}${year}.</span></li>`;
     }).join('');
-    return `<div class="pub-group"><div class="section-heading"><h2>${title}</h2></div><ol class="pub-list">${lis}</ol></div>`;
+    return `<div class="pub-group"><h2>${title}</h2><ol class="pub-list">${lis}</ol></div>`;
   }
 
   section.innerHTML = `
     <div class="container">
-      ${renderGroup('First Author &amp; Co-First Author Papers', firstAuthor)}
-      ${renderGroup('Co-Author Papers (Selected)', coAuthor)}
+      <h2>Publications</h2>
+      ${renderGroup('First &amp; Co-First Author', firstAuthor)}
+      ${renderGroup('Co-Author (Selected)', coAuthor)}
     </div>`;
 }
 
