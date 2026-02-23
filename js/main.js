@@ -130,7 +130,7 @@ function renderProjects(projects) {
 
   section.innerHTML = `
     <div class="container">
-      <h2>Research Experience</h2>
+      <div class="section-heading"><h2>Research Experience</h2></div>
       <div class="projects-grid">${cards}</div>
     </div>`;
 }
@@ -148,9 +148,9 @@ function renderPublications(entries) {
       const journal = e.journal ? `<span class="journal">${e.journal}</span>` : '';
       const year = e.year ? `, ${e.year}` : '';
       const note = e.note ? ` <em>(${e.note})</em>` : '';
-      return `<li>${authors}. "${e.title}"${journal ? '. ' + journal : ''}${year}.${note}</li>`;
+      return `<li><span>${authors}. "${e.title}"${journal ? '. ' + journal : ''}${year}.${note}</span></li>`;
     }).join('');
-    return `<div class="pub-group"><h2>${title}</h2><ol class="pub-list">${lis}</ol></div>`;
+    return `<div class="pub-group"><div class="section-heading"><h2>${title}</h2></div><ol class="pub-list">${lis}</ol></div>`;
   }
 
   section.innerHTML = `
