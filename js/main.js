@@ -120,15 +120,7 @@ function renderAbout(data) {
   const section = document.getElementById('about');
 
   // Use photo if assets/photo.jpg exists, else SVG placeholder
-  const photoHtml = `
-    <div class="about-photo-placeholder">
-      <!-- PHOTO: drop assets/photo.jpg (400x400px) and replace this div with:
-           <img src="assets/photo.jpg" class="about-photo" alt="Lei Chang"> -->
-      <svg width="72" height="72" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="40" cy="30" r="18" fill="#C9BDB5"/>
-        <ellipse cx="40" cy="72" rx="28" ry="18" fill="#C9BDB5"/>
-      </svg>
-    </div>`;
+  const photoHtml = `<img src="assets/photo.jpg" class="about-photo" alt="Lei Chang">`;
 
   section.innerHTML = `
     <div class="container">
